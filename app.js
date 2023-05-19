@@ -2,5 +2,7 @@ import express from 'express'
 
 const app = express()
 
-
-export default app;
+app.use('/', (req, res) => {
+    res.send("Welcome to the e-coomerce Server")
+})
+export default app;    
