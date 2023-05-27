@@ -86,3 +86,36 @@ export const deleteUser = asyncHandler(async (req, res) => {
         throw new Error(error)
     }
 })
+
+export const blockUser = asyncHandler(async (req, res) => {
+    const { id } = req.params
+    try {
+        const block = await User.findByIdAndUpdate(id, {
+            isBlocked: true
+        },
+            {
+                new: true
+            })
+        res.json({
+            message: "User Blocked"
+        })
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+export const unBlockUser = asyncHandler(async (req, res) => {
+    const { id } = req.params
+    try {
+        const unblock = await User.findByIdAndUpdate(id, {
+            isBlocked: true
+        },
+            {
+                new: true
+            })
+        res.json({
+            message: "User Unblocked"
+        })
+    } catch (error) {
+        throw new Error(error)
+    }
+})
