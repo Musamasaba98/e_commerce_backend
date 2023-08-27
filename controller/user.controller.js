@@ -4,6 +4,8 @@ import { generateToken } from "../config/jwtToken.js";
 import { validateMongoDbId } from "../utils/validateMongodbId.js";
 import { generateRefreshToken } from "../config/refreshToken.js";
 import jwt from "jsonwebtoken";
+import { sendEmail } from "./email.controller.js";
+import crypto from 'crypto'
 
 //Create a user
 export const createUser = asyncHandler(async (req, res) => {
@@ -170,4 +172,51 @@ export const unBlockUser = asyncHandler(async (req, res) => {
     } catch (error) {
         throw new Error(error)
     }
+})
+export const updatePassword = asyncHandler(async (req, res) => {
+    const { _id } = req.user
+    const { password } = req.body
+    console.log(password)
+    validateMongoDbId(_id)
+    const user = await User.findById(_id)
+    if (password) {
+        user.password = password
+        const updatedPassword = await user.save()
+        res.json(updatedPassword)
+    } else {
+        req.json(user)
+    }
+})
+
+export const forgotPasswordToken = asyncHandler(async (req, res) => {
+    const { email } = req.body
+    const user = await User.findOne({ email })
+    if (!user) throw new Error("No user with this Email")
+    try {
+        const token = await user.createPasswordResetToken()
+        await user.save()
+        const resetURL = `Hi, please follow this link to reset your Password. This link is valid till 10 minutes from now <a href='http://localhost:4000/api/user/reset-password/${token}'>Click Here</a>`
+        const data = {
+            text: `Hey ${user.firstname}`,
+            to: email,
+            subject: "Forgot Password Link",
+            html: resetURL
+        }
+        sendEmail(data)
+        res.json(token)
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+export const resetPassword = asyncHandler(async (req, res) => {
+    const { password } = req.body
+    const { token } = req.params
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
+    const user = await User.findOne({ passwordResetToken: hashedToken, passwordResetExpires: { $gt: Date.now() } })
+    if (!user) throw new Error("Token Expired please try again.")
+    user.password = password
+    user.passwordResetExpires = null
+    user.passwordResetToken = null
+    await user.save()
+    res.json(user)
 })
