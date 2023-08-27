@@ -1,6 +1,7 @@
 import express from 'express'
 import authRouter from './routes/auth.route.js'
 import productRouter from './routes/product.route.js'
+import blogRouter from './routes/blog.route.js'
 import { errorHandler, notFound } from './middlewares/errorHandler.js'
 import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
@@ -14,6 +15,7 @@ app.use(cookieParser())
 
 app.use("/api/user", authRouter)
 app.use("/api/product", productRouter)
+app.use("/api/blog", blogRouter)
 
 app.use(notFound)
 app.use(errorHandler)
