@@ -1,6 +1,7 @@
 import Product from "../models/productModel.js";
 import asyncHandler from "express-async-handler"
 import slugify from "slugify";
+import User from "../models/userModel.js";
 
 //create product
 export const createProuduct = asyncHandler(async (req, res) => {
@@ -85,6 +86,68 @@ export const getAllProducts = asyncHandler(async (req, res) => {
         }
         const getAllProducts = await query
         res.json(getAllProducts)
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+export const addToWishlist = asyncHandler(async (req, res) => {
+    const { _id } = req.user
+    const { prodId } = req.body
+    try {
+        const user = await User.findById(_id)
+        const alreadyAdded = user.wishList.find(id => id.toString() === prodId)
+        if (alreadyAdded) {
+            let user = await User.findByIdAndUpdate(_id, {
+                $pull: { wishList: prodId }
+            }, {
+                new: true
+            })
+            res.json(user)
+        } else {
+            let user = await User.findByIdAndUpdate(_id, {
+                $push: { wishList: prodId }
+            }, {
+                new: true
+            })
+            res.json(user)
+        }
+    } catch (error) {
+        throw new Error(error)
+    }
+})
+export const rating = asyncHandler(async (req, res) => {
+    //start from here
+    const { _id } = req.user
+    const { star, prodId, comment } = req.body
+    try {
+        const product = await Product.findById(prodId)
+        let alreadyRated = product.ratings.find((userId) => userId.postedby.toString() === _id.toString())
+        if (alreadyRated) {
+            await Product.updateOne({
+                ratings: { $elemMatch: alreadyRated }
+            }, {
+                $set: { "ratings.$.star": star, "ratings.$.comment": comment }
+            },
+                { new: true }
+            )
+
+        } else {
+            await Product.findByIdAndUpdate(prodId, {
+                $push: {
+                    ratings: {
+                        star: star,
+                        comment: comment,
+                        postedby: _id
+                    }
+                }
+            }, { new: true })
+        }
+        const getallratings = await Product.findById(prodId)
+        let totalRating = getallratings.ratings.length
+        let ratingsum = getallratings.ratings.map(item => item.star).reduce((pre, curr) => pre + curr, 0)
+        let actualRating = Math.round(ratingsum / totalRating)
+        let finalProduct = await Product.findByIdAndUpdate(prodId, { totalrating: actualRating }, { new: true })
+        res.json(finalProduct)
     } catch (error) {
         throw new Error(error)
     }

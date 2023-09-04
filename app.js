@@ -5,6 +5,7 @@ import blogRouter from './routes/blog.route.js'
 import categoryRouter from './routes/productCategory.route.js'
 import blogCategoryRouter from './routes/blogCategory.route.js'
 import brandRouter from './routes/brand.route.js'
+import couponRouter from './routes/coupon.route.js'
 import { errorHandler, notFound } from './middlewares/errorHandler.js'
 import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
@@ -22,6 +23,7 @@ app.use("/api/blog", blogRouter)
 app.use("/api/category", categoryRouter)
 app.use("/api/blogcategory", blogCategoryRouter)
 app.use("/api/brand", brandRouter)
+app.use("/api/coupon", couponRouter)
 
 app.use(notFound)
 app.use(errorHandler)
