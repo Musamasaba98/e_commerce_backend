@@ -2,6 +2,9 @@ import Product from "../models/productModel.js";
 import asyncHandler from "express-async-handler"
 import slugify from "slugify";
 import User from "../models/userModel.js";
+import { validateMongoDbId } from "../utils/validateMongodbId.js";
+import cloudinary from "../config/cloudinary.config.js";
+
 
 //create product
 export const createProuduct = asyncHandler(async (req, res) => {
@@ -152,3 +155,37 @@ export const rating = asyncHandler(async (req, res) => {
         throw new Error(error)
     }
 })
+
+export const uploadImages = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDbId(id);
+    console.log("second")
+    try {
+        const uploadedImages = [];
+
+        // Loop through the array of uploaded files and upload each one
+        for (const file of req.files) {
+            const result = await cloudinary.uploader.upload(file.path, {
+                transformation: [
+                    { radius: "max" },
+                    { width: 40, height: 40, crop: "fill" }
+                ]
+            });
+
+            // Store the uploaded image's URL in the array
+            uploadedImages.push(result.secure_url);
+        }
+        const findProduct = await Product.findByIdAndUpdate(id, {
+            images: uploadedImages.map(file => {
+                return file
+            })
+        }, {
+            new: true
+        })
+        // Send a response to the client with the URLs of the uploaded images
+        res.status(200).json(findProduct);
+    } catch (error) {
+        // Handle errors appropriately, such as sending an error response
+        res.status(500).json({ error: "Image upload failed" });
+    }
+});
