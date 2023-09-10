@@ -2,6 +2,7 @@ import Blog from "../models/blogModel.js";
 import User from "../models/userModel.js";
 import asyncHandler from "express-async-handler";
 import { validateMongoDbId } from "../utils/validateMongodbId.js";
+import cloudinary from "../config/cloudinary.config.js";
 
 
 export const createBlog = asyncHandler(async (req, res) => {
@@ -147,5 +148,36 @@ export const dislikeBlog = asyncHandler(async (req, res) => {
     } catch (error) {
         // Handle errors gracefully
         res.status(500).json({ error: 'An error occurred' });
+    }
+});
+export const uploadImages = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDbId(id);
+
+    try {
+        if (!req.file) {
+            // Handle the case where no file was uploaded
+            return res.status(400).json({ error: "No image uploaded" });
+        }
+
+        const result = await cloudinary.uploader.upload(req.file.path, {
+            transformation: [
+                { radius: "max" },
+                { width: 40, height: 40, crop: "fill" }
+            ]
+        });
+
+        // Update the Blog document's image field with the Cloudinary URL
+        const findBlog = await Blog.findByIdAndUpdate(
+            id,
+            { image: result.secure_url }, // Set the image field to the Cloudinary URL
+            { new: true }
+        );
+
+        // Send a response to the client with the updated Blog document
+        res.status(200).json(findBlog);
+    } catch (error) {
+        // Handle errors appropriately, such as sending an error response
+        res.status(500).json({ error: "Image upload failed" });
     }
 });

@@ -9,4 +9,4 @@ cloudinary.config({
     ssl_detected: true
 })
 
-export default cloudinary;
+export default cloudinary;  

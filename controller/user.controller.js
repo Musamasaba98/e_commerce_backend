@@ -10,9 +10,9 @@ import crypto from 'crypto'
 //Create a user
 export const createUser = asyncHandler(async (req, res) => {
     const email = req.body.email
-    const findUser = await User.findOne({ email })
+    const findAdmin = await User.findOne({ email })
 
-    if (!findUser) {
+    if (!findAdmin) {
         //Create new User
         const newUser = await User.create(req.body)
         res.json(newUser)
@@ -26,10 +26,10 @@ export const createUser = asyncHandler(async (req, res) => {
 export const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body
     //check if user exists
-    const findUser = await User.findOne({ email })
-    if (findUser && await findUser.isPasswordMatched(password)) {
-        const refreshToken = generateRefreshToken(findUser._id)
-        await User.findByIdAndUpdate(findUser._id, {
+    const findAdmin = await User.findOne({ email })
+    if (findAdmin && await findAdmin.isPasswordMatched(password)) {
+        const refreshToken = generateRefreshToken(findAdmin._id)
+        await User.findByIdAndUpdate(findAdmin._id, {
             refreshToken: refreshToken
         }, {
             new: true
@@ -38,8 +38,30 @@ export const loginUser = asyncHandler(async (req, res) => {
             httpOnly: true,
             maxAge: 72 * 60 * 60 * 1000
         })
-        const { password, ...others } = findUser._doc;
-        res.json({ ...others, token: generateToken(findUser._id) })
+        const { password, ...others } = findAdmin._doc;
+        res.json({ ...others, token: generateToken(findAdmin._id) })
+    } else {
+        throw new Error("Invalid Credentials")
+    }
+})
+//Login admin
+export const loginAdmin = asyncHandler(async (req, res) => {
+    const { email, password } = req.body
+    //check if user exists
+    const findAdmin = await User.findOne({ email })
+    if (findAdmin && await findAdmin.isPasswordMatched(password)) {
+        const refreshToken = generateRefreshToken(findAdmin._id)
+        await User.findByIdAndUpdate(findAdmin._id, {
+            refreshToken: refreshToken
+        }, {
+            new: true
+        })
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 72 * 60 * 60 * 1000
+        })
+        const { password, ...others } = findAdmin._doc;
+        res.json({ ...others, token: generateToken(findAdmin._id) })
     } else {
         throw new Error("Invalid Credentials")
     }
@@ -99,7 +121,23 @@ export const updateUser = asyncHandler(async (req, res) => {
         throw new Error("Invalid Credentials")
     }
 })
+//save user Address
+export const saveAddress = asyncHandler(async (req, res) => {
+    const { _id } = req.user;
+    validateMongoDbId(_id)
+    try {
+        const updatedUser = await User.findByIdAndUpdate(_id, {
+            address: req?.body?.address,
 
+        }, {
+            new: true
+        })
+        res.json(updatedUser)
+
+    } catch (error) {
+        throw new Error(error)
+    }
+})
 //Get all users
 
 export const getAllUsers = asyncHandler(async (req, res) => {
@@ -219,4 +257,13 @@ export const resetPassword = asyncHandler(async (req, res) => {
     user.passwordResetToken = null
     await user.save()
     res.json(user)
+})
+export const getUserWishlist = asyncHandler(async (req, res) => {
+    const { _id } = req.user
+    try {
+        const findUserWishlist = await User.findById(_id).populate("wishList")
+        res.json(findUserWishlist)
+    } catch (error) {
+        throw new Error(error)
+    }
 })

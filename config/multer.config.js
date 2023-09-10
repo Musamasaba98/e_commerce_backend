@@ -10,6 +10,13 @@ const imageStorage = new CloudinaryStorage({
         public_id: (req, file) => file.originalname,
     }
 })
+const blogImageStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "e_commerce/blog/blogImages",
+        public_id: (req, file) => file.originalname,
+    }
+})
 const multerFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image')) {
         cb(null, true);
@@ -19,3 +26,4 @@ const multerFilter = (req, file, cb) => {
 };
 
 export const uploadImage = multer({ storage: imageStorage, fileFilter: multerFilter, limits: { fieldSize: 2000000 } })
+export const uploadBImage = multer({ storage: blogImageStorage, fileFilter: multerFilter, limits: { fieldSize: 2000000 } })
